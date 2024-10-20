@@ -156,6 +156,26 @@ prey_summary_table_calanoida <- prey_summary_table %>%
 
 #Proportional prey stacked bar plot----
 
+
+# Calanoid v. non-calanoid 
+
+PropCalanoid_plot <- ggplot(prey_summary_table_calanoida, aes(x = station_type, y = prop_calanoid, fill = Calanoida)) +
+  geom_bar(stat = "identity", position = "stack") +  # Use stacked bars
+  scale_fill_manual(
+    values = c("Y" = "#56B4E9", "N" = "darkred"),  # Custom colors for "Y" and "N"
+    labels = c("Y" = "Calanoid copepods", "N" = "Other taxa")  # Updated labels
+  ) +
+  labs(x = "Station Type", y = "Proportion of Calanoid copepods", fill = "Taxa") +  # Change the fill legend title
+  theme_classic(base_size = 16) +
+  theme(legend.position = "right")
+
+# Display the plot
+PropCalanoid_plot
+
+ggsave("PropCalanoid.pdf", 
+       width = 4.5, height = 9, units = "in")   
+
+
 # Reorder the levels of the "taxa" variable based on the sorted order
 prey_summary_table$taxa <- factor(prey_summary_table$taxa, 
                                    levels = rev(unique(prey_summary_table$taxa)))
@@ -168,9 +188,26 @@ glasbey_colors <- pals::glasbey(12)
 prey_overall_comp <- ggplot(prey_summary_table, 
                             aes(x = station_type, y = proportion, fill = taxa)) +
   geom_bar(stat = "identity", position = "stack") +
-  labs(x = "Taxa", y = "Proportional representation in prey hauls", fill = "Taxa") +
-  theme_minimal(base_size = 20) +
+  labs(x = "Station Type", y = "Proportional representation in prey hauls", fill = "Taxa") +
+  theme_classic(base_size = 16) +
   scale_fill_manual(values = glasbey_colors)
 
 prey_overall_comp
 
+
+ggsave("prey_overall_comp.pdf", 
+       width = 4.5, height = 9, units = "in") 
+
+
+
+
+
+# Combine the four plots using ggarrange and add individual labels (A, B)
+combined_prey_prop_plot <- ggarrange(PropCalanoid_plot, prey_overall_comp,
+                           ncol = 2, nrow = 1, 
+                           labels = c("A", "B"),  # Add labels A, B
+                           align = "h")
+combined_prey_prop_plot
+
+ggsave("combined_prey_prop_plot.pdf", 
+       width = 11, height = 6.5, units = "in") 
