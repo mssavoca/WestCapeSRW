@@ -5,7 +5,7 @@
 Tag_guide_SRW <- readxl::read_xlsx("Tag_Guide_SRW.xlsx") %>% 
   mutate(Total_tag_time = as.POSIXct(`Total Tag On Time HH:MM:SS _`, format = "%H:%M:%S", tz = "UTC", origin = "1970-01-01"))
 
-  mutate(Total_tag_time = as.POSIXct(`Total Tag On Time HH:MM:SS _`, format = "%H:%M:%S"))
+  # mutate(Total_tag_time = as.POSIXct(`Total Tag On Time HH:MM:SS _`, format = "%H:%M:%S"))
 
 
   
@@ -25,20 +25,27 @@ Tag_guide_SRW <- readxl::read_xlsx("Tag_Guide_SRW.xlsx") %>%
   
 #Dive depth by time of day----  
   # Create the plot
-  ggplot(SRW_dive_data, aes(x = time, y = avg_feeding_depth, color = deployment)) +
-    geom_point(alpha = 0.7) +
+  ggplot(SRW_dive_data, aes(x = time, y = avg_feeding_depth, 
+                            color = deployment, shape = dive_type)) +
+    geom_point(alpha = 0.6, size = 2) +
     labs(
          x = "Time of day",
-         y = "Average Feeding Depth") +
-    scale_x_datetime(date_breaks = "1 hour", date_labels = "%H:%M") +  # Setting x-axis ticks every hour
+         y = "Average Feeding Depth",
+         shape = "dive type"
+         ) +
+    scale_x_datetime(date_breaks = "2 hour", date_labels = "%H:%M") +  # Setting x-axis ticks every hour
     ylim(0,70) +
     scale_y_reverse() +
+    scale_shape_manual(values = c("u" = 16, "s" = 15, "v" = 17),  # Assigning specific shapes
+                       labels = c("Surface-feeding", "U-shaped dive", "V-shaped dive")) +
+    
     theme_classic(base_size = 16)
   
 
   ggsave("dive_depth_ToD_plot.pdf", 
          width = 8, height = 6, units = "in")  
-  
+
+
   
 #Feeding time per dive by time of day----  
 
@@ -86,13 +93,15 @@ Tag_guide_SRW <- readxl::read_xlsx("Tag_Guide_SRW.xlsx") %>%
     arrange(deployment, hour)  # Arrange by deployment and hour
   
   # Plot number of dives by mean_avg_feeding_depth color by deployment
-  ggplot(dives_by_hour_and_deployment, aes(x = num_feeding_dives_per_h, y = mean_avg_feeding_depth, color = deployment)) +
-    geom_point(alpha = 0.4) +
+  ggplot(dives_by_hour_and_deployment, aes(x = num_feeding_dives_per_h, y = mean_avg_feeding_depth, 
+                                           color = deployment, size = avg_feeding_time)) +
+    geom_point(alpha = 0.3) +
     #geom_smooth(method = "lm", se = FALSE) +  # Optional: to add trend lines
     labs(
       #title = "Number of Dives by Mean Average Feeding Depth",
       y = "Mean Average Feeding Depth (m)",
-      x = "Number of feeding dives per hour"
+      x = "Number of feeding dives per hour",
+      size = "average feeding time\nper dive (s)"
     ) +
     ylim(0,70) +
     scale_y_reverse() +
@@ -102,6 +111,58 @@ ggsave("Feeding_rate_by_depth_plot.pdf",
          width = 8, height = 6, units = "in")    
   
   
+
+
+#Movement behaviors while feeding plot----
+
+# Load necessary packages
+library(ggplot2)
+library(ggpubr)
+
+# Plot A: Tortuosity
+tort_plot <- ggplot(SRW_dive_data, aes(x = tortuosity_feeding, color = deployment)) +
+  geom_density(alpha = 0.6) +
+  geom_density(color = "black", size = 1) +
+  geom_rug(aes(x = tortuosity_feeding), sides = "b", alpha = 0.3) +
+  labs(x = "Tortuosity while feeding", y = "Density") +
+  #scale_fill_brewer(palette = "Set2") +
+  theme_classic(base_size = 14) +
+  theme(legend.position = "none")
+
+
+# Plot B: Avg Feeding Speed
+speed_plot <- ggplot(SRW_dive_data, aes(x = avg_feeding_speed, color = deployment)) +
+  geom_density(alpha = 0.6) +
+  geom_density(color = "black", size = 1) +
+  geom_rug(aes(x = avg_feeding_speed), sides = "b", alpha = 0.3) +
+  labs(x = "Avg speed while feeding (m/s)", y = "Density") +
+  #scale_fill_brewer(palette = "Set2") +
+  theme_classic(base_size = 14) +
+  theme(legend.position = "bottom")
+
+# Combine the four plots using ggarrange and add individual labels (A, B)
+combined_plot <- ggarrange(tort_plot, speed_plot,
+                           ncol = 1, nrow = 2, 
+                           labels = c("A", "B"),  # Add labels A, B
+                           align = "v", 
+                           common.legend = TRUE, legend = "bottom")
+
+# Display the combined plot
+print(combined_plot)
+
+
+ggsave("Feeding_tort and speed_plot.pdf", 
+       width = 9, height = 5, units = "in")   
+
+
+
+
+
+
+
+
+
+
   
 # Scatter plot of time_between_dives and feeding_time
   ggplot(SRW_dive_data, aes(x = feeding_time, y = time_between_dives)) +
@@ -117,66 +178,6 @@ ggsave("Feeding_rate_by_depth_plot.pdf",
   
   
   
-#Kinematics of feeding plot----
-  
-  # Load necessary packages
-  library(ggplot2)
-  library(ggpubr)
-  
-  # Plot A: Pitch
-  pitch_plot <- ggplot(SRW_dive_data, aes(x = avg_pitch_feeding, color = deployment)) +
-    geom_density(alpha = 0.6) +
-    geom_density(color = "black", size = 1) +
-    geom_rug(aes(x = avg_pitch_feeding), sides = "b", alpha = 0.3) +
-    labs(x = "Avg pitch", y = "Density") +
-    #scale_fill_brewer(palette = "Set2") +
-    theme_classic(base_size = 14) +
-    theme(legend.position = "none")
-  
-  # Plot B: Roll
-  roll_plot <- ggplot(SRW_dive_data, aes(x = max_roll_feeding, color = deployment)) +
-    geom_density(alpha = 0.6) +
-    geom_density(color = "black", size = 1) +
-    geom_rug(aes(x = max_roll_feeding), sides = "b", alpha = 0.3) +
-    labs(x = "Max roll", y = "Density") +
-    #scale_fill_brewer(palette = "Set2") +
-    xlim(0,100) +
-    theme_classic(base_size = 14) +
-    theme(legend.position = "none")
-  
-  # Plot C: Heading
-  heading_plot <- ggplot(SRW_dive_data, aes(x = heading_excursion, color = deployment)) +
-    geom_density(alpha = 0.6) +
-    geom_density(color = "black", size = 1) +
-    geom_rug(aes(x = heading_excursion), sides = "b", alpha = 0.3) +
-    labs(x = "Heading excursion", y = "Density") +
-    #scale_fill_brewer(palette = "Set2") +
-    theme_classic(base_size = 14) +
-    theme(legend.position = "none")
-  
-  # Plot D: Avg Feeding Speed
-  speed_plot <- ggplot(SRW_dive_data, aes(x = avg_feeding_speed, color = deployment)) +
-    geom_density(alpha = 0.6) +
-    geom_density(color = "black", size = 1) +
-    geom_rug(aes(x = avg_feeding_speed), sides = "b", alpha = 0.3) +
-    labs(x = "Avg speed (m/s)", y = "Density") +
-    #scale_fill_brewer(palette = "Set2") +
-    theme_classic(base_size = 14) +
-    theme(legend.position = "bottom")
-  
-  # Combine the four plots using ggarrange and add individual labels (A, B, C, D)
-  combined_plot <- ggarrange(pitch_plot, roll_plot, heading_plot, speed_plot,
-                             ncol = 1, nrow = 4, 
-                             labels = c("A", "B", "C", "D"),  # Add labels A, B, C, D
-                             align = "v", 
-                             common.legend = TRUE, legend = "bottom")
-  
-  # Display the combined plot
-  print(combined_plot)
- 
-  
-ggsave("Feeding_kinematics_plot.pdf", 
-         width = 9, height = 9, units = "in")   
 
 
 
@@ -184,11 +185,11 @@ ggsave("Feeding_kinematics_plot.pdf",
 # Numbers of feeding metrics for paper ----
 
 dives_by_hour_and_deployment %>%
-  filter(mean_avg_feeding_depth < 10) %>%
+  filter(mean_avg_feeding_depth >30) %>%
   ungroup() %>%  # Ensure there's no grouping
   summarise(
-    median = median(num_feeding_dives_per_h, na.rm = TRUE),
-    sd = sd(num_feeding_dives_per_h, na.rm = TRUE)
+    median_dives_per_h = median(num_feeding_dives_per_h, na.rm = TRUE),
+    sd_dives_per_h = sd(num_feeding_dives_per_h, na.rm = TRUE)
   )
 
 median(SRW_dive_data$avg_feeding_speed)
@@ -198,7 +199,84 @@ median(SRW_dive_data$stroke_frequency_feeding)
 sd(SRW_dive_data$stroke_frequency_feeding)
 
   
-# EXPERIMENTAL below here
+SRW_dive_data %>%
+  filter(avg_feeding_depth < 10) %>%
+  ungroup() %>%  # Ensure there's no grouping
+  summarise(median_feeding_time = median(feeding_time, na.rm = TRUE),
+            sd_feeding_time = sd(feeding_time, na.rm = TRUE),
+            median_feeding_speed = median(avg_feeding_speed, na.rm = TRUE),
+            sd_feeding_speed = sd(avg_feeding_speed, na.rm = TRUE),
+  )
+
+
+
+
+# EXPERIMENTAL below here ----
+
+
+
+
+#Kinematics of feeding plot----
+
+# Load necessary packages
+library(ggplot2)
+library(ggpubr)
+
+# Plot A: Pitch
+pitch_plot <- ggplot(SRW_dive_data, aes(x = avg_pitch_feeding, color = deployment)) +
+  geom_density(alpha = 0.6) +
+  geom_density(color = "black", size = 1) +
+  geom_rug(aes(x = avg_pitch_feeding), sides = "b", alpha = 0.3) +
+  labs(x = "Avg pitch", y = "Density") +
+  #scale_fill_brewer(palette = "Set2") +
+  theme_classic(base_size = 14) +
+  theme(legend.position = "none")
+
+# Plot B: Roll
+roll_plot <- ggplot(SRW_dive_data, aes(x = max_roll_feeding, color = deployment)) +
+  geom_density(alpha = 0.6) +
+  geom_density(color = "black", size = 1) +
+  geom_rug(aes(x = max_roll_feeding), sides = "b", alpha = 0.3) +
+  labs(x = "Max roll", y = "Density") +
+  #scale_fill_brewer(palette = "Set2") +
+  xlim(0,100) +
+  theme_classic(base_size = 14) +
+  theme(legend.position = "none")
+
+# Plot C: Heading
+heading_plot <- ggplot(SRW_dive_data, aes(x = heading_excursion, color = deployment)) +
+  geom_density(alpha = 0.6) +
+  geom_density(color = "black", size = 1) +
+  geom_rug(aes(x = heading_excursion), sides = "b", alpha = 0.3) +
+  labs(x = "Heading excursion", y = "Density") +
+  #scale_fill_brewer(palette = "Set2") +
+  theme_classic(base_size = 14) +
+  theme(legend.position = "none")
+
+# Plot D: Avg Feeding Speed
+speed_plot <- ggplot(SRW_dive_data, aes(x = avg_feeding_speed, color = deployment)) +
+  geom_density(alpha = 0.6) +
+  geom_density(color = "black", size = 1) +
+  geom_rug(aes(x = avg_feeding_speed), sides = "b", alpha = 0.3) +
+  labs(x = "Avg speed (m/s)", y = "Density") +
+  #scale_fill_brewer(palette = "Set2") +
+  theme_classic(base_size = 14) +
+  theme(legend.position = "bottom")
+
+# Combine the four plots using ggarrange and add individual labels (A, B, C, D)
+combined_plot <- ggarrange(pitch_plot, roll_plot, heading_plot, speed_plot,
+                           ncol = 1, nrow = 4, 
+                           labels = c("A", "B", "C", "D"),  # Add labels A, B, C, D
+                           align = "v", 
+                           common.legend = TRUE, legend = "bottom")
+
+# Display the combined plot
+print(combined_plot)
+
+
+ggsave("Feeding_kinematics_plot.pdf", 
+       width = 9, height = 9, units = "in")   
+
   
   # Ensure the time column is in proper time format
   SRW_dive_data$time <- hms::as_hms(SRW_dive_data$time)
@@ -222,10 +300,16 @@ sd(SRW_dive_data$stroke_frequency_feeding)
     arrange(deployment, hour)  # Arrange by deployment and hour
   
 
-
-
-
-
+  
+  
+  
+Feed_time_summ <-  SRW_dive_data %>% 
+  group_by(dive_type) %>% 
+  summarise(med_feed_dur = median(feeding_time),
+            sd_feed_dur = sd(feeding_time))
+Feed_time_summ
+  
+  
 
 
 

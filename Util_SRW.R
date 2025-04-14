@@ -6,6 +6,8 @@ library(tidyverse)
 library(dplyr)
 library(scales)
 library(devtools)
+library(readxl)
+library(MCMCglmm)
 
 
 Historic_prey_dens <- read.csv("Historic_prey_density.csv") %>%
@@ -89,7 +91,7 @@ All_prey_density
 
 
 
-SRW_dive_data <- read.csv("dive_table_10-8-24.csv") %>% 
+SRW_dive_data <- read.csv("dive_table_3-30-25.csv") %>% 
   separate(dive_start_timestamp, into = c("date", "time"), sep = " ") %>% 
   mutate(time = as.POSIXct(time, format="%H:%M:%S"))
 
