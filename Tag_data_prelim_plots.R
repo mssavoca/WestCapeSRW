@@ -2,52 +2,138 @@
 # Prelim tagging analysis
 ################################
 
+# Load some additional libraries
+library(ggridges)
+library(lubridate)
+
 Tag_guide_SRW <- readxl::read_xlsx("Tag_Guide_SRW.xlsx") %>% 
   mutate(Total_tag_time = as.POSIXct(`Total Tag On Time HH:MM:SS _`, format = "%H:%M:%S", tz = "UTC", origin = "1970-01-01"))
 
   # mutate(Total_tag_time = as.POSIXct(`Total Tag On Time HH:MM:SS _`, format = "%H:%M:%S"))
 
 
-  
 #Dive depth by individual----
-  ggplot(SRW_dive_data, aes(x = avg_feeding_depth, color = deployment)) +
-    geom_density(alpha = 0.8) + 
-    geom_density(aes(x = avg_feeding_depth), color = "black", size = 1) +
-    coord_flip() +
-    scale_x_reverse() +
-    geom_rug(aes(x = avg_feeding_depth, color = deployment), sides = "b", alpha = 0.7) +  # Adding rug plot at the bottom
-    labs(x = "Feeding depth (m)", y = "Feeding likelihood") +
-    theme_classic(base_size = 16)
+ggplot(SRW_dive_data, aes(x = avg_feeding_depth, color = deployment)) +
+  geom_density(alpha = 0.8) + 
+  geom_density(aes(x = avg_feeding_depth), color = "black", size = 1) +
+  coord_flip() +
+  scale_x_reverse() +
+  geom_rug(aes(x = avg_feeding_depth, color = deployment), sides = "b", alpha = 0.7) +  # Adding rug plot at the bottom
+  labs(x = "Feeding depth (m)", y = "Feeding likelihood") +
+  theme_classic(base_size = 16)
 
-  ggsave("dive_depth_density_plot.pdf", 
+ggsave("dive_depth_density_plot.pdf", 
+       width = 6, height = 6, units = "in")
+
+
+#Dive depth by individual w/ colored ridges----
+depth_plot <- ggplot(SRW_dive_data, aes(x = avg_feeding_depth, fill = deployment)) +
+    #geom_density(alpha = 0.8) + 
+    geom_density_ridges(aes(x = avg_feeding_depth, y = deployment), scale = 3.2, alpha =0.5, color = "black") +
+    scale_x_reverse(limits = c(70, -2)) + # Adds 5% space on the right) +
+    scale_y_discrete(expand = expansion(mult = c(0, 0.3)))+
+    coord_flip() +
+    #geom_rug(aes(x = avg_feeding_depth, color = deployment), sides = "b", alpha = 0.7) +  # Adding rug plot at the bottom
+    labs(x = "Avg. Feeding Depth (m)", y = "Feeding Likelihood", fill = "Deployment") +
+    theme_classic(base_size = 12  )+
+    scale_fill_manual(values = c("ea230116-P47" = "#332288",  # Assign custom colors to each group
+                                "ea230119-P49" = "#88CCEE", 
+                                "ea230120-P46" = "#44AA99",
+                                "ea230120-P48a"= "#117733",
+                                "ea230120-P48b"= "#999933",
+                                "ea250124-40" = "#DDCC77" ,
+                                "ea250124-82" = "#CC6677",
+                                "ea250124-P46"= "#882255",
+                                "ea250124-P48" = "#AA4499",
+                                "ea250131-40"= "#CC3311")) +
+  theme(axis.text.x = element_blank())+
+  theme(legend.position = c(0.8, 0.8), 
+        legend.text=element_text(size=9), 
+        legend.key = element_blank(),
+        legend.background=element_blank()) + 
+  guides(fill = "none") 
+
+depth_plot
+
+ggsave("dive_depth_density_plot.pdf", 
          width = 6, height = 6, units = "in")
-  
-  
+
+
 #Dive depth by time of day----  
+# Create the plot
+ggplot(SRW_dive_data, aes(x = time, y = avg_feeding_depth, 
+                          color = deployment, shape = dive_type)) +
+  geom_point(alpha = 0.6, size = 2) +
+  labs(
+    x = "Time of day",
+    y = "Average Feeding Depth",
+    shape = "dive type"
+  ) +
+  scale_x_datetime(date_breaks = "2 hour", date_labels = "%H:%M") +  # Setting x-axis ticks every hour
+  ylim(0,70) +
+  scale_y_reverse() +
+  scale_shape_manual(values = c("u" = 16, "s" = 15, "v" = 17),  # Assigning specific shapes
+                     labels = c("Surface-feeding", "U-shaped dive", "V-shaped dive")) +
+  
+  theme_classic(base_size = 16)
+
+
+ggsave("dive_depth_ToD_plot.pdf", 
+       width = 8, height = 6, units = "in")  
+  
+  
+#Dive depth by time of day w/ colored points----  
   # Create the plot
-  ggplot(SRW_dive_data, aes(x = time, y = avg_feeding_depth, 
+timeofday_plot <- ggplot(SRW_dive_data, aes(x = time, y = avg_feeding_depth, 
                             color = deployment, shape = dive_type)) +
     geom_point(alpha = 0.6, size = 2) +
     labs(
-         x = "Time of day",
-         y = "Average Feeding Depth",
-         shape = "dive type"
+         x = "Time of Day",
+         y = NULL,
+         shape = "Dive Type"
          ) +
     scale_x_datetime(date_breaks = "2 hour", date_labels = "%H:%M") +  # Setting x-axis ticks every hour
-    ylim(0,70) +
+    ylim(-5,80) +
     scale_y_reverse() +
     scale_shape_manual(values = c("u" = 16, "s" = 15, "v" = 17),  # Assigning specific shapes
                        labels = c("Surface-feeding", "U-shaped dive", "V-shaped dive")) +
+    scale_color_manual(values = c("ea230116-P47" = "#332288",  # Assign custom colors to each group
+                                 "ea230119-P49" = "#88CCEE", 
+                                 "ea230120-P46" = "#44AA99",
+                                 "ea230120-P48a"= "#117733",
+                                 "ea230120-P48b"= "#999933",
+                                 "ea250124-40" = "#DDCC77" ,
+                                 "ea250124-82" = "#CC6677",
+                                 "ea250124-P46"= "#882255",
+                                 "ea250124-P48" = "#AA4499",
+                                 "ea250131-40"= "#CC3311")) +
     
-    theme_classic(base_size = 16)
-  
+    theme_classic(base_size = 12)+ 
+    theme(legend.position = c(0.4, 0.6), legend.text=element_text(size=9))+
+    guides(color="none")+ 
+    ylim(70, -2)
+ 
+  timeofday_plot  
 
   ggsave("dive_depth_ToD_plot.pdf", 
          width = 8, height = 6, units = "in")  
 
 
-  
 #Feeding time per dive by time of day----  
+  
+  # Create the plot
+  ggplot(SRW_dive_data, aes(x = feeding_time, y = avg_feeding_depth, color = deployment)) +
+    geom_point(alpha = 0.7) +
+    geom_smooth(color = "black", method = "lm") +
+    labs(
+      x = "Feeding time (s)",
+      y = "Average Feeding Depth") +
+    #scale_x_datetime(date_breaks = "1 hour", date_labels = "%H:%M") +  # Setting x-axis ticks every hour
+    scale_y_reverse(limits = c(70,20)) +
+    theme_classic(base_size = 16)
+  
+  
+#Feeding time per dive by time of day w/ colored points ----  
 
   # Create the plot
   ggplot(SRW_dive_data, aes(x = feeding_time, y = avg_feeding_depth, color = deployment)) +
@@ -58,7 +144,17 @@ Tag_guide_SRW <- readxl::read_xlsx("Tag_Guide_SRW.xlsx") %>%
          y = "Average Feeding Depth") +
     #scale_x_datetime(date_breaks = "1 hour", date_labels = "%H:%M") +  # Setting x-axis ticks every hour
     scale_y_reverse(limits = c(70,20)) +
-    theme_classic(base_size = 16)
+    theme_classic(base_size = 12) +
+    scale_color_manual(values = c("ea230116-P47" = "#332288",  # Assign custom colors to each group
+                                 "ea230119-P49" = "#88CCEE", 
+                                 "ea230120-P46" = "#44AA99",
+                                 "ea230120-P48a"= "#117733",
+                                 "ea230120-P48b"= "#999933",
+                                 "ea250124-40" = "#DDCC77" ,
+                                 "ea250124-82" = "#CC6677",
+                                 "ea250124-P46"= "#882255",
+                                 "ea250124-P48" = "#AA4499",
+                                 "ea250131-40"= "#CC3311"))
   
   
   
@@ -107,9 +203,47 @@ Tag_guide_SRW <- readxl::read_xlsx("Tag_Guide_SRW.xlsx") %>%
     scale_y_reverse() +
     theme_classic(base_size = 16)
   
-ggsave("Feeding_rate_by_depth_plot.pdf", 
-         width = 8, height = 6, units = "in")    
+  ggsave("Feeding_rate_by_depth_plot.pdf", 
+         width = 8, height = 6, units = "in") 
   
+  # Plot number of dives by mean_avg_feeding_depth color by deployment w/ colored points
+feedingdepth_plot <- ggplot(dives_by_hour_and_deployment, aes(x = num_feeding_dives_per_h, y = mean_avg_feeding_depth, 
+                                           color = deployment, size = avg_feeding_time)) +
+    geom_point(alpha = 0.3) +
+    #geom_smooth(method = "lm", se = FALSE) +  # Optional: to add trend lines
+    labs(
+      #title = "Number of Dives by Mean Average Feeding Depth",
+      y = NULL,
+      x = "# of feeding dives/hour",
+      size = "Avg. Feeding \nTime per Dive (s)"
+    ) +
+    ylim(-2,70) +
+    scale_y_reverse() +
+    theme_classic(base_size = 12) +
+  guides(color = "none")+
+  scale_color_manual(values = c("ea230116-P47" = "#332288",  # Assign custom colors to each group
+                                "ea230119-P49" = "#88CCEE", 
+                                "ea230120-P46" = "#44AA99",
+                                "ea230120-P48a"= "#117733",
+                                "ea230120-P48b"= "#999933",
+                                "ea250124-40" = "#DDCC77" ,
+                                "ea250124-82" = "#CC6677",
+                                "ea250124-P46"= "#882255",
+                                "ea250124-P48" = "#AA4499",
+                                "ea250131-40"= "#CC3311"))+
+  theme(legend.position = c(0.7, 0.3), legend.text=element_text(size=9))
+
+feedingdepth_plot
+
+ggsave("Feeding_rate_by_depth_plot.pdf", 
+       width = 8, height = 6, units = "in")    
+
+# Plot all together
+cowplot::plot_grid(depth_plot, timeofday_plot, feedingdepth_plot,  nrow = 1, align = 'hv')
+  
+ggsave("Feeding_plots.pdf", 
+       width = 9, height = 3.5, units = "in")    
+
   
 
 
@@ -118,6 +252,16 @@ ggsave("Feeding_rate_by_depth_plot.pdf",
 # Load necessary packages
 library(ggplot2)
 library(ggpubr)
+library(ggridges)
+library(cowplot)
+
+# Define all deployments you want in the legend
+all_deployments <- c("ea230116-P47", "ea230119-P49", "ea230120-P46", "ea230120-P48a", 
+                     "ea230120-P48b", "ea250124-40", "ea250124-82", "ea250124-P46", 
+                     "ea250124-P48", "ea250131-40")
+
+SRW_dive_data <- SRW_dive_data %>%
+  mutate(deployment = factor(deployment, levels = all_deployments))
 
 # Plot A: Tortuosity
 tort_plot <- ggplot(SRW_dive_data, aes(x = tortuosity_feeding, color = deployment)) +
@@ -129,6 +273,38 @@ tort_plot <- ggplot(SRW_dive_data, aes(x = tortuosity_feeding, color = deploymen
   theme_classic(base_size = 14) +
   theme(legend.position = "none")
 
+tort_plot_ridge <- SRW_dive_data %>%
+  #filter(!is.nan(tortuosity_feeding)) %>% # Drop out dives where we don't have this
+  mutate(position = as.numeric(factor(deployment, levels = sort(unique(deployment))))) %>%
+  mutate(group = "All") %>% # Create a dummy variable for plotting all
+  mutate(deployment = factor(deployment, levels = rev(sort(unique(deployment))))) %>%
+  ggplot(aes(x = tortuosity_feeding, y = position, fill = deployment)) +
+  geom_density_ridges(scale = 2, alpha = 0.6, color = "black", rel_min_height = 0.01) +
+  geom_rug(aes(x = tortuosity_feeding), sides = "b", alpha = 0.3) +
+  scale_y_discrete(expand = expansion(mult = c(0.1, 0.1)))+  # increase top space
+  labs(x = "Avg. Feeding Tortuosity", y = NULL, fill = "Deployment") +
+  geom_density_ridges(aes(x = tortuosity_feeding, y = 12.25), 
+                      fill = "gray80", alpha = 0.5, scale = 1.2) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "none",
+    axis.title.y = element_blank(),
+    panel.grid.major.x = element_blank(),  # Remove major vertical gridlines
+    panel.grid.minor.x = element_blank()
+  ) + 
+  geom_hline(yintercept = c(1:10, 12.25), color = "black", linetype = "solid", alpha =0.25) +  # Add horizontal lines from y = 1 to y = 10
+  scale_fill_manual(values = c("ea230116-P47" = "#332288",  # Assign custom colors to each group
+                               "ea230119-P49" = "#88CCEE", 
+                               "ea230120-P46" = "#44AA99",
+                               "ea230120-P48a"= "#117733",
+                               "ea230120-P48b"= "#999933",
+                               "ea250124-40" = "#DDCC77" ,
+                               "ea250124-82" = "#CC6677",
+                               "ea250124-P46"= "#882255",
+                               "ea250124-P48" = "#AA4499",
+                               "ea250131-40"= "#CC3311")) 
+
+tort_plot_ridge
 
 # Plot B: Avg Feeding Speed
 speed_plot <- ggplot(SRW_dive_data, aes(x = avg_feeding_speed, color = deployment)) +
@@ -140,19 +316,70 @@ speed_plot <- ggplot(SRW_dive_data, aes(x = avg_feeding_speed, color = deploymen
   theme_classic(base_size = 14) +
   theme(legend.position = "bottom")
 
+speed_plot_ridge <- SRW_dive_data %>%
+  #filter(!is.nan(avg_feeding_speed)) %>% # Drop out dives where we don't have this
+  mutate(position = as.numeric(factor(deployment, levels = sort(unique(deployment))))) %>%
+  mutate(group = "All") %>% # Create a dummy variable for plotting all
+  mutate(deployment = factor(deployment, levels = rev(sort(unique(deployment))))) %>%
+  ggplot(aes(x = avg_feeding_speed, y= position, fill = deployment)) +
+  geom_density_ridges(scale = 2, alpha = 0.6, color = "black", rel_min_height = 0.001) +
+  geom_rug(aes(x = avg_feeding_speed), sides = "b", alpha = 0.3) +
+  scale_y_discrete(expand = expansion(mult = c(0.1, 0.075)))+  # increase top space
+  labs(x = "Avg. Feeding Speed (m/s)", y = NULL, fill = "Deployment") +
+  geom_density_ridges(aes(x = avg_feeding_speed, y = 12.25), 
+                      fill = "gray80", alpha = 0.5, scale = 1.2) +
+  scale_x_continuous(limits = c(0.5, 2)) +  # Set the same x limits for both ridges
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid.major.x = element_blank(),  # Remove major vertical gridlines
+    panel.grid.minor.x = element_blank()
+  ) + 
+  geom_hline(yintercept = c(1:10, 12.25), color = "black", linetype = "solid", alpha =0.25) +  # Add horizontal lines from y = 1 to y = 10
+  scale_fill_manual(values = c("ea230116-P47" = "#332288",  # Assign custom colors to each group
+                               "ea230119-P49" = "#88CCEE", 
+                               "ea230120-P46" = "#44AA99",
+                               "ea230120-P48a"= "#117733",
+                               "ea230120-P48b"= "#999933",
+                               "ea250124-40" = "#DDCC77" ,
+                               "ea250124-82" = "#CC6677",
+                               "ea250124-P46"= "#882255",
+                               "ea250124-P48" = "#AA4499",
+                               "ea250131-40"= "#CC3311")) 
+
+
+
+legend_right <- get_legend(
+  speed_plot_ridge + theme(legend.position = "right")
+)
+
+# Remove legend from right plot before combining
+speed_plot_ridge_no_legend <- speed_plot_ridge + theme(legend.position = "none")
+
 # Combine the four plots using ggarrange and add individual labels (A, B)
-combined_plot <- ggarrange(tort_plot, speed_plot,
-                           ncol = 1, nrow = 2, 
-                           labels = c("A", "B"),  # Add labels A, B
-                           align = "v", 
-                           common.legend = TRUE, legend = "bottom")
+# combined_plot <- ggarrange(tort_plot_ridge, speed_plot_ridge,
+#                            nrow = 1,
+#                            #labels = c("A", "B"),  # Add labels A, B
+#                            align = "h", 
+#                            common.legend = TRUE,
+#                            legend = "right",
+#                            widths = c(1, 1))
+
+combined_plot <- cowplot::plot_grid(
+  plot_grid(tort_plot_ridge, speed_plot_ridge_no_legend, ncol = 2, align = "h"),
+  legend_right,
+  ncol = 2,
+  rel_widths = c(1, 0.25)  # Adjust space for legend
+)
 
 # Display the combined plot
 print(combined_plot)
 
 
-ggsave("Feeding_tort and speed_plot.pdf", 
-       width = 9, height = 5, units = "in")   
+ggsave("Feeding_tort and speed_plot_ridges.pdf", 
+       width = 8, height = 5, units = "in")   
 
 
 

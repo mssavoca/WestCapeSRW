@@ -7,7 +7,7 @@ library(dplyr)
 library(scales)
 library(devtools)
 library(readxl)
-library(MCMCglmm)
+#library(MCMCglmm)
 
 
 Historic_prey_dens <- read.csv("Historic_prey_density.csv") %>%
@@ -71,6 +71,7 @@ Historic_prey_dens$date <- as.character(Historic_prey_dens$date)
 
 # Select desired columns from Historic_prey_dens
 Historic_prey_dens_selected <- Historic_prey_dens %>%
+  rename("sample_num" = "ï..sample_num") %>%
   select(sample_num, date, station, station_type, year, month, taxa, dens_by_m3)
 
 # Convert date column to character in Modern_prey_dens
@@ -80,6 +81,7 @@ Modern_prey_dens$year <- as.double(Modern_prey_dens$year)
 
 # Select desired columns from Modern_prey_dens
 Modern_prey_dens_selected <- Modern_prey_dens %>%
+  rename("sample_num" = "ï..sample_num") %>%
   select(sample_num, date, station, station_type, year, month, taxa, dens_by_m3)
 
 # Combine data frames
