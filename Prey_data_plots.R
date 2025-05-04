@@ -127,6 +127,42 @@ ggsave("All_prey_dens_by_month_plot.pdf",
        width = 9, height = 6, units = "in")    
 
 
+# All prey dens by taxa by month plot
+All_prey_dens_month_bytaxa <- All_prey_density_filtered %>%
+  mutate(dens_by_m3 = dens_by_m3 +1) %>% # To deal with lots of zeros!
+  mutate(taxa = recode(taxa, "other" = "Other"))%>%
+  #mutate(month = factor(month, levels = c("October", "November", "December", "January"))) %>%
+  ggplot(aes(x = dens_by_m3, y = station_type, fill = station_type)) +
+  geom_density_ridges(aes(point_color = station_type, point_fill = station_type),
+                      point_alpha = 0.75, jittered_points = TRUE, alpha = 0.4, scale = 2.5, rel_min_height = 0.01) +
+  #geom_boxplot(position = position_dodge(width = 0.75), alpha = 0.7, outlier.shape = NA) +
+  #geom_point(aes(color = station_type) ,
+             #position = position_jitterdodge(dodge.width = 0.75, jitter.width = 0.3), alpha = 0.2) +
+  facet_wrap(~ reorder(taxa, -dens_by_m3, FUN = median), scales = "free_y", ncol = 3, strip.position = "top") +  # Vertical stacking
+  theme_bw() +
+  labs(x = expression("Density (individuals per " * m^3 * ")"), y = NULL, fill = "Station Type") +
+  #scale_x_log10() +
+  scale_x_continuous(
+    trans = "log10",
+    breaks = 10^(seq(0, 6, 2)),
+    labels = scales::trans_format("log10", math_format(10^.x))) + 
+  theme(
+    # Remove y-axis labels inside facets
+    strip.text = element_text(size = 10, face = "bold"),
+    axis.text.y = element_blank(),  # Remove y-axis text inside the plot
+    axis.ticks.y = element_blank(), # Remove y-axis ticks
+  )+
+  scale_y_discrete(expand = expansion(mult = c(0.25, 2.75)), labels = c("station" = "Station", "target" = "Target"))+  # increase top space
+  scale_discrete_manual(aesthetics = "point_color", values = c("red", "blue"), name= "Prey Sample Type") +
+  scale_fill_manual(values = c("target" = "blue", "station" = "red"), labels = c("Station", "Target"), name= "Prey Sample Type") +
+  guides(fill = guide_legend("Prey Sample Type"), color = guide_legend("Prey Sample Type"))
+
+
+All_prey_dens_month_bytaxa 
+
+
+ggsave("All_prey_dens_by_taxa_plot_wdots.pdf", 
+       width = 6, height = 5, units = "in")    
 
 
 # Prey data summary table----
