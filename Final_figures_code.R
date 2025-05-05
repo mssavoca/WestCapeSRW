@@ -9,7 +9,6 @@ source("Util_SRW.R")
 # Fig. 1; Map ----
 
 
-
 # devtools::install_github("MikkoVihtakari/ggOceanMapsData") # required by ggOceanMaps
 # devtools::install_github("MikkoVihtakari/ggOceanMaps")
 # # 
@@ -162,7 +161,7 @@ ggsave("combined_prey_prop_plot.pdf",
 
 
 
-# Fig 3; prey raincloud plot ----
+# Fig. 3; prey raincloud plot ----
 
 # Convert "month" column to factor with desired order
 All_prey_density <- All_prey_density %>%
