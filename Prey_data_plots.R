@@ -5,6 +5,7 @@
 source("Util_SRW.R")
 
 
+
 #Historic prey data plot----
 
 # Calculate median by taxa for station type
@@ -162,6 +163,67 @@ All_prey_dens_month_bytaxa
 
 
 ggsave("All_prey_dens_by_taxa_plot_wdots.pdf", 
+       width = 6, height = 5, units = "in")    
+
+
+
+
+
+
+
+
+# Prey by taxa, raincloud plot ----
+
+All_prey_dens_bytaxa <- All_prey_density_filtered %>%
+  mutate(
+    dens_by_m3 = dens_by_m3 + 1,
+    taxa = recode(taxa, "other" = "Other"),
+    # Custom factor levels with Calanidae first and Other last
+    taxa = factor(taxa, levels = c("Calanidae", "Small copepods", "Metridinidae",
+                                   "Bivalvia", "Centropagidae", "Candaciidae",
+                                   "Eucalanidae", "Euphausiidae", "Other")),  # REPLACE WITH YOUR ACTUAL TAXA NAMES
+    # Order station_type with target on top
+    station_type = factor(station_type) %>% fct_relevel("target", "station")
+  ) %>%
+  ggplot(aes(x = dens_by_m3, y = station_type, fill = station_type)) +
+  geom_density_ridges(
+    aes(point_color = station_type),
+    point_alpha = 0.2,
+    jittered_points = TRUE, 
+    alpha = 0.5, 
+    scale = 2.5,
+    position = position_raincloud(height = 0.3, ygap = 0.05)
+  ) +
+  facet_wrap(~ taxa, scales = "free_y", ncol = 3, strip.position = "top") +  # Use factor ordering
+  theme_bw() +
+  labs(x = expression("Density (individuals per " * m^3 * ")"), y = NULL) +
+  scale_x_continuous(
+    trans = "log10",
+    breaks = 10^(seq(0, 6, 2)),
+    labels = scales::trans_format("log10", math_format(10^.x))
+  ) + 
+  theme(
+    strip.text = element_text(size = 10, face = "bold"),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "right"
+  ) +
+  scale_y_discrete(expand = expansion(mult = c(0.25, 2.75))) +
+  scale_discrete_manual(
+    aesthetics = "point_color", 
+    values = c("target" = "blue", "station" = "red"),
+    name = "Sample Type"  # Unified legend title
+  ) +
+  scale_fill_manual(
+    values = c("target" = "blue", "station" = "red"),
+    name = "Sample Type",  # Unified legend title
+    labels = c("Target", "Station")
+  )
+
+All_prey_dens_bytaxa
+
+
+ggsave("All_prey_dens_by_taxa_wdots.pdf", 
        width = 6, height = 5, units = "in")    
 
 

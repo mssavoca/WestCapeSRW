@@ -123,6 +123,8 @@ All_prey_dens_month <- ggplot(All_prey_density_filtered, aes(x = reorder(taxa, -
 
 All_prey_dens_month
 
+ggsave("All_prey_dens_by_month_plot.pdf", 
+       width = 9, height = 6, units = "in")    
 
 
 
@@ -152,6 +154,9 @@ prey_summary_table <- prey_summary_table %>%
 prey_summary_table_calanoida <- prey_summary_table %>% 
   group_by(Calanoida, station_type) %>% 
   summarise(prop_calanoid = sum(proportion))
+
+
+
 
 
 #Proportional prey stacked bar plot----

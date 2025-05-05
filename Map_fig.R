@@ -7,12 +7,10 @@ devtools::install_github("MikkoVihtakari/ggOceanMapsData") # required by ggOcean
 devtools::install_github("MikkoVihtakari/ggOceanMaps")
 # 
 install.packages("ggOceanMapsData", repos = c("https://mikkovihtakari.github.io/drat", "https://cloud.r-project.org"))
-remotes::install_github("MikkoVihtakari/ggOceanMaps")
 
+remotes::install_github("MikkoVihtakari/ggOceanMaps")
 library(raster)
 library(sf)
-
-library(rgdal)
 library(ggOceanMapsData)
 library(ggOceanMaps)
 library(ggspatial)
@@ -87,8 +85,8 @@ tagging_loc <- tagging_loc %>% rename(lon = Long_On, lat = Lat_On)
 
 # Plot with consistent 'lon' and 'lat'
 Fieldwork_map <- basemap(data = dt_fieldwork) +
-  geom_point(data = whale_encouters, 
-             aes(x = lon, y = lat, color = period), size = 3.5, alpha = 0.7) +
+  # geom_point(data = whale_encouters, 
+  #            aes(x = lon, y = lat, color = period), size = 3.5, alpha = 0.7) +
   geom_point(data = prey_target, 
              aes(x = lon, y = lat, color = period), shape = 2, size = 3.5) +
   geom_point(data = prey_stations, 
