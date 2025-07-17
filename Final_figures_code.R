@@ -227,125 +227,54 @@ ggsave("All_prey_dens_by_taxa_wdots.pdf",
 
 #Fig. 6; Dive details plot----
 
-#Dive depth by individual w/ colored ridges
+library(ggpubr)
+
+# 1. Show the fill legend in panel A (depth_plot)
 depth_plot <- ggplot(SRW_dive_data, aes(x = avg_feeding_depth, fill = deployment)) +
-  #geom_density(alpha = 0.8) + 
-  geom_density_ridges(aes(x = avg_feeding_depth, y = deployment), scale = 3.2, alpha =0.5, color = "black") +
-  scale_x_reverse(limits = c(70, -2)) + # Adds 5% space on the right) +
-  scale_y_discrete(expand = expansion(mult = c(0, 0.3)))+
+  geom_density_ridges(aes(x = avg_feeding_depth, y = deployment), scale = 3.2, alpha = 0.5, color = "black") +
+  scale_x_reverse(limits = c(70, -2)) +
+  scale_y_discrete(expand = expansion(mult = c(0, 0.3))) +
   coord_flip() +
-  #geom_rug(aes(x = avg_feeding_depth, color = deployment), sides = "b", alpha = 0.7) +  # Adding rug plot at the bottom
   labs(x = "Avg. Feeding Depth (m)", y = "Feeding Likelihood", fill = "Deployment") +
-  theme_classic(base_size = 12  )+
-  scale_fill_manual(values = c("ea230116-P47" = "#332288",  # Assign custom colors to each group
-                               "ea230119-P49" = "#88CCEE", 
-                               "ea230120-P46" = "#44AA99",
-                               "ea230120-P48a"= "#117733",
-                               "ea230120-P48b"= "#999933",
-                               "ea250124-40" = "#DDCC77" ,
-                               "ea250124-82" = "#CC6677",
-                               "ea250124-P46"= "#882255",
-                               "ea250124-P48" = "#AA4499",
-                               "ea250131-40"= "#CC3311")) +
-  theme(axis.text.x = element_blank())+
-  theme(legend.position = c(0.8, 0.8), 
-        legend.text=element_text(size=9), 
-        legend.key = element_blank(),
-        legend.background=element_blank()) + 
-  guides(fill = "none") 
-
-depth_plot
-
-ggsave("dive_depth_density_plot.pdf", 
-       width = 6, height = 6, units = "in")
-
-
-
-#Dive depth by time of day w/ colored points 
-
-timeofday_plot <- ggplot(SRW_dive_data, aes(x = time, y = avg_feeding_depth, 
-                                            color = deployment, shape = dive_type)) +
-  geom_point(alpha = 0.6, size = 2) +
-  labs(
-    x = "Time of Day",
-    y = NULL,
-    shape = "Dive Type"
-  ) +
-  scale_x_datetime(date_breaks = "2 hour", date_labels = "%H:%M") +  # Setting x-axis ticks every hour
-  ylim(-5,80) +
-  scale_y_reverse() +
-  scale_shape_manual(values = c("u" = 16, "s" = 15, "v" = 17),  # Assigning specific shapes
-                     labels = c("Surface-feeding", "U-shaped dive", "V-shaped dive")) +
-  scale_color_manual(values = c("ea230116-P47" = "#332288",  # Assign custom colors to each group
-                                "ea230119-P49" = "#88CCEE", 
-                                "ea230120-P46" = "#44AA99",
-                                "ea230120-P48a"= "#117733",
-                                "ea230120-P48b"= "#999933",
-                                "ea250124-40" = "#DDCC77" ,
-                                "ea250124-82" = "#CC6677",
-                                "ea250124-P46"= "#882255",
-                                "ea250124-P48" = "#AA4499",
-                                "ea250131-40"= "#CC3311")) +
-  
-  theme_classic(base_size = 12)+ 
-  theme(legend.position = c(0.4, 0.6), legend.text=element_text(size=9))+
-  guides(color="none")+ 
-  ylim(70, -2)
-
-timeofday_plot  
-
-
-# Plot number of dives per hour by average depth
-# Summarize number of dives by hour for each deployment and add average feeding time
-dives_by_hour_and_deployment <- SRW_dive_data %>%
-  mutate(hour = hour(time)) %>%  # Extract the hour from the "time" column
-  group_by(deployment, hour) %>%  # Group by deployment and hour
-  summarise(
-    num_feeding_dives_per_h = n(),  # Count the number of dives (rows)
-    mean_avg_feeding_depth = (mean = avg_feeding_depth),
-    avg_feeding_time = mean(feeding_time, na.rm = TRUE),  # Calculate average feeding_time for each group
-    sd_feeding_time = sd(feeding_time, na.rm = TRUE)
-  ) %>% 
-  mutate(se_feeding_time = sd_feeding_time/sqrt(num_feeding_dives_per_h)) %>% 
-  arrange(deployment, hour)  # Arrange by deployment and hour
-
-# Plot number of dives by mean_avg_feeding_depth color by deployment w/ colored points
-feedingdepth_plot <- ggplot(dives_by_hour_and_deployment, aes(x = num_feeding_dives_per_h, y = mean_avg_feeding_depth, 
-                                                              color = deployment, size = avg_feeding_time)) +
-  geom_point(alpha = 0.3) +
-  #geom_smooth(method = "lm", se = FALSE) +  # Optional: to add trend lines
-  labs(
-    #title = "Number of Dives by Mean Average Feeding Depth",
-    y = NULL,
-    x = "# of feeding dives/hour",
-    size = "Avg. Feeding \nTime per Dive (s)"
-  ) +
-  ylim(-2,70) +
-  scale_y_reverse() +
   theme_classic(base_size = 12) +
-  guides(color = "none")+
-  scale_color_manual(values = c("ea230116-P47" = "#332288",  # Assign custom colors to each group
-                                "ea230119-P49" = "#88CCEE", 
-                                "ea230120-P46" = "#44AA99",
-                                "ea230120-P48a"= "#117733",
-                                "ea230120-P48b"= "#999933",
-                                "ea250124-40" = "#DDCC77" ,
-                                "ea250124-82" = "#CC6677",
-                                "ea250124-P46"= "#882255",
-                                "ea250124-P48" = "#AA4499",
-                                "ea250131-40"= "#CC3311"))+
-  theme(legend.position = c(0.7, 0.3), legend.text=element_text(size=9))
+  scale_fill_manual(values = c(
+    "ea230116-P47" = "#332288", "ea230119-P49" = "#88CCEE", "ea230120-P46" = "#44AA99",
+    "ea230120-P48a"= "#117733", "ea230120-P48b"= "#999933", "ea250124-40" = "#DDCC77",
+    "ea250124-82" = "#CC6677", "ea250124-P46"= "#882255", "ea250124-P48" = "#AA4499",
+    "ea250131-40"= "#CC3311")) +
+  theme(axis.text.x = element_blank(),
+        legend.position = c(0.8, 0.8),
+        legend.text = element_text(size = 9),
+        legend.key = element_blank(),
+        legend.background = element_blank())
+# (No guides(fill = "none") here!)
 
-feedingdepth_plot
+# 2. Hide the deployment legend in panels B and C
+timeofday_plot <- timeofday_plot + guides(color = "none")
+feedingdepth_plot <- feedingdepth_plot + guides(color = "none")
 
-ggsave("Feeding_rate_by_depth_plot.pdf", 
-       width = 8, height = 6, units = "in")    
 
-# Plot all together
-cowplot::plot_grid(depth_plot, timeofday_plot, feedingdepth_plot,  nrow = 1, align = 'hv')
 
-ggsave("Feeding_plots.pdf", 
-       width = 9, height = 3.5, units = "in")    
+# Make sure all plots use the same fill/color mapping and have their legends enabled.
+
+# Combine plots with a common legend at the top and panel labels
+fig6 <- ggarrange(
+  depth_plot, timeofday_plot, feedingdepth_plot,
+  nrow = 1,
+  labels = c("A", "B", "C"),
+  font.label = list(size = 14, face = "bold"),
+  align = "hv",
+  common.legend = TRUE,
+  legend = "top"
+)
+
+# Save or display the figure
+ggsave("Feeding_plots_labeled.pdf_R1.pdf", fig6, width = 12, height = 4, units = "in")
+print(fig6)
+
+
+
+
 
 
 # Fig. 7; Dive kinematics plot----
@@ -436,10 +365,25 @@ speed_plot_ridge_no_legend <- speed_plot_ridge + theme(legend.position = "none")
 #                            legend = "right",
 #                            widths = c(1, 1))
 
+# Combine the two ridge plots with labels A and B
 combined_plot <- cowplot::plot_grid(
-  plot_grid(tort_plot_ridge, speed_plot_ridge_no_legend, ncol = 2, align = "h"),
+  cowplot::plot_grid(
+    tort_plot_ridge, 
+    speed_plot_ridge_no_legend, 
+    ncol = 2, 
+    align = "h", 
+    labels = c("A", "B"),    # Add panel labels
+    label_size = 14,         # Adjust label size as needed
+    label_fontface = "bold"  # Bold labels
+  ),
   legend_right,
   ncol = 2,
-  rel_widths = c(1, 0.25)  # Adjust space for legend
+  rel_widths = c(1, 0.25)   # Adjust space for legend
 )
+
+combined_plot
+
+
+# Save or display the figure
+ggsave("Dive kinematics plot_R1.pdf", combined_plot, width = 11, height = 5, units = "in")
 

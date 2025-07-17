@@ -6,9 +6,11 @@ library(devtools)
 library(readxl)
 library(MCMCglmm)
 library(ggridges)
+library(ggpubr)
+library(cowplot)
 
 
-Historic_prey_dens <- read.csv("Historic_prey_density.csv") %>%
+HistoricggpubrHistoric_prey_dens <- read.csv("Historic_prey_density.csv") %>%
   mutate(month = substr(date, 1, 1),
          year = substr(date, nchar(date) - 1, nchar(date)),
          station_type = case_when(
