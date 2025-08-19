@@ -37,13 +37,15 @@ All_prey_density <- All_prey_density %>%
 
 
 # Make sure your factors are properly set
-df$station_type <- as.factor(df$station_type)
-df$taxa <- as.factor(df$taxa)
-df$month <- as.factor(df$month)
-df$year <- as.factor(df$year)
+All_prey_density$station_type <- as.factor(All_prey_density$station_type)
+All_prey_density$taxa <- as.factor(All_prey_density$taxa)
+All_prey_density$month <- as.factor(All_prey_density$month)
+All_prey_density$year <- as.factor(All_prey_density$year)
 
 
 
+All_prey_density_filtered <- All_prey_density %>%
+  filter(month != "September")
 
 All_prey_density_filtered$taxa <- relevel(All_prey_density_filtered$taxa, 
                                           ref = "Candaciidae")
@@ -57,7 +59,7 @@ prior <- list(
 
 # Fit the MCMCglmm model
 mcmc_model <- MCMCglmm(
-  fixed = dens_by_m3 ~ station_type + taxa*month,  # interaction term
+  fixed = dens_by_m3 ~ station_type + taxa,  # interaction term
   random = ~ year,
   data = All_prey_density_filtered,
   family = "gaussian",

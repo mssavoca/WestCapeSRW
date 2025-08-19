@@ -161,67 +161,131 @@ ggsave("combined_prey_prop_plot.pdf",
 
 
 
-# Fig. 3; prey raincloud plot ----
+# Fig. 3; prey hauls plot ----
 
-# Convert "month" column to factor with desired order
-All_prey_density <- All_prey_density %>%
-  mutate(month = factor(month, levels = c("October", "November", "December", "January")))
+Zoop_data <- read.csv("Table S2_Zooplankton sampling data.csv")
 
-# Filter out rows with "September" in the "month" column
-All_prey_density_filtered <- All_prey_density %>%
-  filter(month != "September")
 
-All_prey_dens_bytaxa <- All_prey_density_filtered %>%
-  mutate(
-    dens_by_m3 = dens_by_m3 + 1,
-    taxa = recode(taxa, "other" = "Other"),
-    # Custom factor levels with Calanidae first and Other last
-    taxa = factor(taxa, levels = c("Calanidae", "Small copepods", "Metridinidae",
-                                   "Bivalvia", "Centropagidae", "Candaciidae",
-                                   "Eucalanidae", "Euphausiidae", "Other")),  # REPLACE WITH YOUR ACTUAL TAXA NAMES
-    # Order station_type with target on top
-    station_type = factor(station_type) %>% fct_relevel("target", "station")
+# Reshape to long format and rename Family levels
+Zoop_long <- Zoop_data %>%
+  pivot_longer(
+    cols = c(cal_dens, small_dens, euc_dens, met_dens, 
+             cen_dens, can_dens, oth_dens, eup_dens, biv_dens),
+    names_to = "Family",
+    values_to = "density"
   ) %>%
-  ggplot(aes(x = dens_by_m3, y = station_type, fill = station_type)) +
-  geom_density_ridges(
-    aes(point_color = station_type),
-    point_alpha = 0.2,
-    jittered_points = TRUE, 
-    alpha = 0.5, 
-    scale = 2.5,
-    position = position_raincloud(height = 0.3, ygap = 0.05)
-  ) +
-  facet_wrap(~ taxa, scales = "free_y", ncol = 3, strip.position = "top") +  # Use factor ordering
-  theme_bw() +
-  labs(x = expression("Density (individuals per " * m^3 * ")"), y = NULL) +
-  scale_x_continuous(
-    trans = "log10",
-    breaks = 10^(seq(0, 6, 2)),
-    labels = scales::trans_format("log10", math_format(10^.x))
-  ) + 
-  theme(
-    strip.text = element_text(size = 10, face = "bold"),
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    legend.position = "right"
-  ) +
-  scale_y_discrete(expand = expansion(mult = c(0.25, 2.75))) +
-  scale_discrete_manual(
-    aesthetics = "point_color", 
-    values = c("target" = "blue", "station" = "red"),
-    name = "Sample Type"  # Unified legend title
-  ) +
-  scale_fill_manual(
-    values = c("target" = "blue", "station" = "red"),
-    name = "Sample Type",  # Unified legend title
-    labels = c("Target", "Station")
+  mutate(
+    Family = recode(Family,
+                    cal_dens   = "Calanidae",
+                    small_dens = "Small copepods",
+                    euc_dens   = "Eucalanidae",
+                    met_dens   = "Metridinidae",
+                    cen_dens   = "Centropagidae",
+                    can_dens   = "Candaciidae",
+                    oth_dens   = "Other",
+                    eup_dens   = "Euphausiidae",
+                    biv_dens   = "Bivalvia"
+    ),
+    Family = factor(Family, levels = c("Calanidae", "Small copepods", "Metridinidae",
+                                       "Bivalvia", "Centropagidae", "Candaciidae",
+                                       "Eucalanidae", "Euphausiidae", "Other")),
   )
 
-All_prey_dens_bytaxa
+# Calculate medians for each Family × Station_or_target
+median_lines <- Zoop_long %>%
+  group_by(Family, Station_or_target) %>%
+  summarise(med_density = median(density, na.rm = TRUE), .groups = "drop")
+
+Prey_hauls_plot_R1 <- ggplot(Zoop_long, aes(x = Station_or_target, y = density, color = Station_or_target)) +
+  geom_violin(trim = FALSE, fill = NA) +
+  geom_jitter(width = 0.2, alpha = 0.4, size = 1) +
+  # dashed median lines
+  geom_hline(data = median_lines,
+             aes(yintercept = med_density, color = Station_or_target),
+             linetype = "dashed", size = 0.75) +
+  scale_y_log10(
+    limits = c(1, 100000),
+    labels = label_comma(),
+    breaks = trans_breaks("log10", function(x) 10^x)  # every 10^n
+  ) +
+  scale_fill_manual(values = c("target" = "blue", "station" = "red")) +
+  scale_color_manual(values = c("target" = "blue", "station" = "red")) +
+  facet_grid(. ~ Family, scales = "free_y") +
+  labs(
+    x = "Sample type",
+    y = expression("Density (individuals per " * m^3 * ")")
+  ) +
+  theme_bw(base_size = 15) +
+  theme(
+    strip.text = element_text(size = 11),
+    legend.position = "none"
+  )
+Prey_hauls_plot_R1
+
+# Save or display the figure
+ggsave("Prey hauls plot_R1.pdf", Prey_hauls_plot_R1, width = 12.25, height = 5, units = "in")
 
 
-ggsave("All_prey_dens_by_taxa_wdots.pdf", 
-       width = 6, height = 5, units = "in")   
+
+# # Convert "month" column to factor with desired order
+# All_prey_density <- All_prey_density %>%
+#   mutate(month = factor(month, levels = c("October", "November", "December", "January")))
+# 
+# # Filter out rows with "September" in the "month" column
+# All_prey_density_filtered <- All_prey_density %>%
+#   filter(month != "September")
+# 
+# All_prey_dens_bytaxa <- All_prey_density_filtered %>%
+#   mutate(
+#     dens_by_m3 = dens_by_m3 + 1,
+#     taxa = recode(taxa, "other" = "Other"),
+#     # Custom factor levels with Calanidae first and Other last
+#     taxa = factor(taxa, levels = c("Calanidae", "Small copepods", "Metridinidae",
+#                                    "Bivalvia", "Centropagidae", "Candaciidae",
+#                                    "Eucalanidae", "Euphausiidae", "Other")),  # REPLACE WITH YOUR ACTUAL TAXA NAMES
+#     # Order station_type with target on top
+#     station_type = factor(station_type) %>% fct_relevel("target", "station")
+#   ) %>%
+#   ggplot(aes(x = dens_by_m3, y = station_type, fill = station_type)) +
+#   geom_density_ridges(
+#     aes(point_color = station_type),
+#     point_alpha = 0.2,
+#     jittered_points = TRUE, 
+#     alpha = 0.5, 
+#     scale = 2.5,
+#     position = position_raincloud(height = 0.3, ygap = 0.05)
+#   ) +
+#   facet_wrap(~ taxa, scales = "free_y", ncol = 3, strip.position = "top") +  # Use factor ordering
+#   theme_bw() +
+#   labs(x = expression("Density (individuals per " * m^3 * ")"), y = NULL) +
+#   scale_x_continuous(
+#     trans = "log10",
+#     breaks = 10^(seq(0, 6, 2)),
+#     labels = scales::trans_format("log10", math_format(10^.x))
+#   ) + 
+#   theme(
+#     strip.text = element_text(size = 10, face = "bold"),
+#     axis.text.y = element_blank(),
+#     axis.ticks.y = element_blank(),
+#     legend.position = "right"
+#   ) +
+#   scale_y_discrete(expand = expansion(mult = c(0.25, 2.75))) +
+#   scale_discrete_manual(
+#     aesthetics = "point_color", 
+#     values = c("target" = "blue", "station" = "red"),
+#     name = "Sample Type"  # Unified legend title
+#   ) +
+#   scale_fill_manual(
+#     values = c("target" = "blue", "station" = "red"),
+#     name = "Sample Type",  # Unified legend title
+#     labels = c("Target", "Station")
+#   )
+# 
+# All_prey_dens_bytaxa
+
+
+# ggsave("All_prey_dens_by_taxa_wdots.pdf", 
+#        width = 6, height = 5, units = "in")   
 
 
 

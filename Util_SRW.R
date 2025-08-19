@@ -10,7 +10,7 @@ library(ggpubr)
 library(cowplot)
 
 
-HistoricggpubrHistoric_prey_dens <- read.csv("Historic_prey_density.csv") %>%
+Historic_prey_dens <- read.csv("Historic_prey_density.csv") %>%
   mutate(month = substr(date, 1, 1),
          year = substr(date, nchar(date) - 1, nchar(date)),
          station_type = case_when(
