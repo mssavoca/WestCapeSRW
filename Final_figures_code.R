@@ -226,6 +226,44 @@ Prey_hauls_plot_R1
 ggsave("Prey hauls plot_R1.pdf", Prey_hauls_plot_R1, width = 12.25, height = 5, units = "in")
 
 
+# Code for Fig S1
+median_lines_forRev3 <- Zoop_long %>%
+  filter(year > 2021) %>% 
+  group_by(Family, Station_or_target) %>%
+  summarise(med_density = median(density, na.rm = TRUE), .groups = "drop")
+
+
+Prey_hauls_plot_R1_forRev3 <- ggplot(
+  filter(Zoop_long, year > 2021),
+         aes(x = Station_or_target, y = density, color = Station_or_target)) +
+  geom_violin(trim = FALSE, fill = NA) +
+  geom_jitter(width = 0.2, alpha = 0.4, size = 1) +
+  # dashed median lines
+  geom_hline(data = median_lines_forRev3,
+             aes(yintercept = med_density, color = Station_or_target),
+             linetype = "dashed", size = 0.75) +
+  scale_y_log10(
+    limits = c(1, 100000),
+    labels = label_comma(),
+    breaks = trans_breaks("log10", function(x) 10^x)  # every 10^n
+  ) +
+  scale_fill_manual(values = c("target" = "blue", "station" = "red")) +
+  scale_color_manual(values = c("target" = "blue", "station" = "red")) +
+  facet_grid(. ~ Family, scales = "free_y") +
+  labs(
+    x = "Sample type",
+    y = expression("Density (individuals per " * m^3 * ")")
+  ) +
+  theme_bw(base_size = 15) +
+  theme(
+    strip.text = element_text(size = 11),
+    legend.position = "none"
+  )
+Prey_hauls_plot_R1_forRev3
+
+ggsave("Prey_hauls_plot_R1_forRev3.pdf", Prey_hauls_plot_R1_forRev3, width = 12.25, height = 5, units = "in")
+
+
 
 # # Convert "month" column to factor with desired order
 # All_prey_density <- All_prey_density %>%
