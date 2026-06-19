@@ -9,9 +9,9 @@ source("Util_SRW.R")
 # Fig. 1; Map ----
 
 
-# devtools::install_github("MikkoVihtakari/ggOceanMapsData") # required by ggOceanMaps
-# devtools::install_github("MikkoVihtakari/ggOceanMaps")
-# # 
+devtools::install_github("MikkoVihtakari/ggOceanMapsData") # required by ggOceanMaps
+devtools::install_github("MikkoVihtakari/ggOceanMaps")
+#
 # install.packages("ggOceanMapsData", repos = c("https://mikkovihtakari.github.io/drat", "https://cloud.r-project.org"))
 # 
 # remotes::install_github("MikkoVihtakari/ggOceanMaps")
@@ -24,20 +24,20 @@ source("Util_SRW.R")
 
 country_borders <- st_read("DoS_LSIB_v11_3_19Dec2023.shp")
 
-dt <- data.frame(lon = c(9, 9, 27, 27), lat = c(-20, -20, -37, -37))
+dt <- data.frame(lon = c(2, 2, 27, 27), lat = c(-15, -15, -37, -37))
 
 BoxFieldwork <- data.frame(
-  lon = c(17.5, 17.5, 18.6, 18.6),
-  lat = c(-33.8,-32.3, -32.3,  -33.8)
+  lon = c(17.7, 17.7, 18.5, 18.5),
+  lat = c(-33.8,-33, -33,  -33.8)
 )
 
-SRW_regional_map <- basemap(data = dt 
-                            #bathymetry = TRUE, 
-                            #bathy.style = "rcb"
+SRW_regional_map <- basemap(data = dt,
+                            bathymetry = TRUE, 
+                            bathy.style = "rcb"
 ) + 
   geom_sf(data = country_borders, color = "black") +
-  xlim(14, 25) +
-  ylim(-37,-25) +
+  xlim(8, 25) +
+  ylim(-37,-15) +
   coord_sf(expand = F) +
   ggspatial::geom_spatial_polygon(
     data = BoxFieldwork,
@@ -58,34 +58,68 @@ SRW_regional_map <- basemap(data = dt
   annotation_north_arrow(location = "bl", which_north = "true",
                          height = unit(1.75, "cm"),
                          width = unit(1.75, "cm")) +
-  theme(text = element_text(size = 28))
+  theme(
+    text = element_text(size = 18),
+    legend.position = "none"
+  )
 SRW_regional_map
 
-dt_fieldwork =  data.frame(lon = c(17.3, 17.3, 18.35, 18.35), lat = c(-33.7,-32.4, -32.4,  -33.7))
+
+ggsave("InsetMapForMMS_R1.pdf", 
+       width = 4.5, height = 7.5, units = "in")   
+
+
+
 
 whale_encouters = read.csv("encounters.csv")
-prey_stations = read.csv("stations.csv")
-prey_target = read.csv("target.csv")
-tagging_loc = read_xlsx("Tag_Guide_SRW.xlsx")
+# prey_stations = read.csv("stations.csv")
+# prey_target = read.csv("target.csv")
+tagging_loc = read_xlsx("Tag_Guide_SRW.xlsx") %>% 
+  rename(lon = Long_On, lat = Lat_On) %>%
+  mutate(
+    year = as.factor(case_when(
+      substr(ID, 3, 4) == "23" ~ 2023,
+      substr(ID, 3, 4) == "25" ~ 2025,
+      TRUE ~ NA_real_
+    ))
+  )
 
 # Standardize column names
-whale_encouters <- whale_encouters %>% rename(lon = long)
-prey_stations <- prey_stations %>% rename(lon = long)
-tagging_loc <- tagging_loc %>% rename(lon = Long_On, lat = Lat_On)
+# whale_encouters <- whale_encouters %>% rename(lon = long)
+# prey_stations <- prey_stations %>% rename(lon = long)
+  
+
+dt_fieldwork =  data.frame(lon = c(17.6, 17.6, 18.3, 18.3), lat = c(-33.7,-33, -33,  -33.7))
+
 
 # Plot with consistent 'lon' and 'lat'
-Fieldwork_map <- basemap(data = dt_fieldwork) +
-  # geom_point(data = whale_encouters, 
+Fieldwork_map <- basemap(data = dt_fieldwork
+                         #bathymetry = TRUE
+) +
+  # geom_point(data = whale_encouters,
   #            aes(x = lon, y = lat, color = period), size = 3.5, alpha = 0.7) +
-  geom_point(data = prey_target, 
-             aes(x = lon, y = lat, color = period), shape = 2, size = 3.5) +
-  geom_point(data = prey_stations, 
-             aes(x = lon, y = lat), shape = 3, color = "darkred", size = 3.5) +
+  # geom_point(data = prey_target, 
+  #            aes(x = lon, y = lat, color = period), shape = 2, size = 3.5) +
+  # geom_point(data = prey_stations, 
+  #            aes(x = lon, y = lat), shape = 3, color = "darkred", size = 3.5) +
+  
   geom_point(data = tagging_loc, 
-             aes(x = lon, y = lat), shape = 23, color = "blue", size = 3.5) +
-  scale_color_manual(values = c("hist" = "orange2", "new" = "darkgreen", "old" = "orange2")) +
-  labs(color = "Period") +
-  annotation_scale(location = "br", line_width = 4, text_cex = 1.5) +
+             # Map 'size' to 'Feed' so we can control them independently
+             aes(x = lon, y = lat, color = year, shape = Feed, size = Feed)) + 
+  
+  # Assign solid diamond (18) to "Y" and hollow diamond (5) to "N"
+  scale_shape_manual(values = c("Y" = 18, "N" = 5)) +
+  
+  # Manually adjust sizes so they visually match (tweak these numbers if needed)
+  scale_size_manual(values = c("Y" = 3.5, "N" = 2.5)) +
+  
+  # Update the legend titles here
+  labs(color = "Year", shape = "Feeding?") +
+  
+  # Hide the 'size' legend so you don't get duplicate legend keys
+  guides(size = "none") +
+  
+  annotation_scale(location = "br", line_width = 2, text_cex = 1) +
   scale_x_continuous(
     breaks = seq(floor(min(dt_fieldwork$lon, na.rm = TRUE)),
                  ceiling(max(dt_fieldwork$lon, na.rm = TRUE)), by = 0.5)
@@ -94,10 +128,13 @@ Fieldwork_map <- basemap(data = dt_fieldwork) +
     breaks = seq(floor(min(dt_fieldwork$lat, na.rm = TRUE)),
                  ceiling(max(dt_fieldwork$lat, na.rm = TRUE)), by = 0.5)
   ) +
-  theme_bw(base_size = 22) +
-  theme(legend.position = "none")
+  theme_bw(base_size = 18)
 
 Fieldwork_map
+
+ggsave("MapForMMS.pdf", 
+       width = 5.5, height = 7, units = "in")   
+
 
 
 

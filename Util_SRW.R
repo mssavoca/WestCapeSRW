@@ -8,6 +8,7 @@ library(MCMCglmm)
 library(ggridges)
 library(ggpubr)
 library(cowplot)
+library(sf)
 
 
 Historic_prey_dens <- read.csv("Historic_prey_density.csv") %>%
